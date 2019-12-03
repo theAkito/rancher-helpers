@@ -38,7 +38,7 @@ function rmVolumes {
   echoInfo "Successfully removed all Docker volumes." || \
   echoInfo "No Docker volumes exist! Skipping."
 }
-rmLocs {
+function rmLocs {
   ## Removes all Rancher and Kubernetes related folders.
   declare -a FOLDERS
   FOLDERS=( "/etc/ceph" \
