@@ -9,10 +9,12 @@
 ## without any complaints about remains
 ## from the previous installation.
 
+# Removes ALL containers.
 docker rm -f $(sudo docker ps -aq);
+# Removes ALL volumes.
 docker volume rm $(sudo docker volume ls -q);
-
-rm -rf /etc/ceph \
+# Removes all Rancher and Kubernetes related folders.
+rm -fr /etc/ceph \
        /etc/cni \
        /etc/kubernetes \
        /opt/cni \
@@ -28,11 +30,13 @@ rm -rf /etc/ceph \
        /var/log/containers \
        /var/log/pods \
        /var/run/calico
-
-for mount in $(mount | grep tmpfs | grep '/var/lib/kubelet' | awk '{ print $3 }') /var/lib/kubelet /var/lib/rancher; do umount $mount; done
-
+# Unmounts all Rancher and Kubernetes related virtual devices and volumes.
+for mount in \
+  $(mount | grep tmpfs | grep '/var/lib/kubelet' | awk '{ print $3 }') \
+  /var/lib/kubelet /var/lib/rancher; do umount $mount; done
+# Removes metadata database.
 rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db
-
+# Removes Firewall entries related to Rancher or Kubernetes.
 IPTABLES="/sbin/iptables"
 cat /proc/net/ip_tables_names | while read table; do
   $IPTABLES -t $table -L -n | while read c chain rest; do
@@ -42,7 +46,11 @@ cat /proc/net/ip_tables_names | while read table; do
   done
   $IPTABLES -t $table -X
 done
-
+# Removes Rancher installation.
 rm -fr /opt/rancher
+# Restarts services, to apply previous removals.
 sudo systemctl restart containerd
-sudo systemctl restart docker
+sudo systemctl stop docker
+# Needs a pause, because else it complains about "too quick" restarts.
+sleep 10
+sudo systemctl start docker
