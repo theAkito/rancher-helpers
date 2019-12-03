@@ -15,7 +15,7 @@
 ## Expects `systemd` on the host.
 
 # Silences commands.
-function silence { local args="$@"; @{args} &>/dev/null; }
+function silence { local args="$@"; ${args} &>/dev/null; }
 # Check your privilege.
 function checkPriv { if [[ "$EUID" != 0 ]]; then echo "Please run me as root."; exit 1; fi; }
 # Debugging Echoes.
