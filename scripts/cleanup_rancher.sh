@@ -26,7 +26,7 @@ function echoError { local args="$@"; white_brackets $(red_printf "ERROR") && ec
 function containerd_restart { systemctl restart containerd; }
 function rmMetaDB { silence "rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db"; }
 function docker_start { systemctl start docker; }
-function finish_line { white_printf "Done!\n" }
+function finish_line { white_printf "Done!\n"; }
 function docker_restart {
   systemctl stop docker;
   echo "Restarting Docker..."
