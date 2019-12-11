@@ -34,7 +34,7 @@ function docker_restart {
   systemctl start docker
   if [[ $? == 0 ]]; then
     echoInfo "Docker restarted!"
-  elif
+  else
     echoError "Docker restart failed!"
     white_printf "Manually stop docker then wait 20 seconds and start it again.\n"
   fi
