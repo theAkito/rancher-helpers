@@ -29,12 +29,15 @@ function docker_start { systemctl start docker; }
 function finish_line { white_printf "Done!\n"; }
 function docker_restart {
   systemctl stop docker;
-  echo "Restarting Docker..."
+  echoInfo "Restarting Docker..."
   sleep 10;
-  systemctl start docker && \
-  echoInfo "Docker restarted!" || \
-  echoError "Docker restart failed!"
-  white_printf "Manually stop docker then wait 20 seconds and start it again.\n"
+  systemctl start docker
+  if [[ $? == 0 ]]; then
+    echoInfo "Docker restarted!"
+  elif
+    echoError "Docker restart failed!"
+    white_printf "Manually stop docker then wait 20 seconds and start it again.\n"
+  fi
 }
 function rmContainers {
   ## Removes ALL containers.
