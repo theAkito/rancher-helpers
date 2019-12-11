@@ -22,10 +22,20 @@ function yellow_printf { printf "\033[33m$@\033[0m"; } # Debugging output.
 function white_printf { printf "\033[1;37m$@\033[0m"; } # Debugging output.
 function white_brackets { local args="$@"; white_printf "["; printf "${args}"; white_printf "]"; } # Debugging output.
 function echoInfo { local args="$@"; white_brackets $(green_printf "INFO") && echo " ${args}"; } # Debugging output.
-function docker_restart { systemctl stop docker; sleep 10; systemctl start docker; }
-function docker_start { systemctl start docker; }
+function echoError { local args="$@"; white_brackets $(red_printf "ERROR") && echo " ${args}"; } # Debugging output.
 function containerd_restart { systemctl restart containerd; }
 function rmMetaDB { silence "rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db"; }
+function docker_start { systemctl start docker; }
+function finish_line { white_printf "Done!\n" }
+function docker_restart {
+  systemctl stop docker;
+  echo "Restarting Docker..."
+  sleep 10;
+  systemctl start docker && \
+  echoInfo "Docker restarted!" || \
+  echoError "Docker restart failed!"
+  white_printf "Manually stop docker then wait 20 seconds and start it again.\n"
+}
 function rmContainers {
   ## Removes ALL containers.
   silence "docker rm -f $(docker ps -aq)" && \
