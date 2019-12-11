@@ -1,6 +1,6 @@
 #!/bin/bash
 # See LICENSE.
-# Copyright (C) 2019 Akito
+# Copyright (C) 2019 Akito <akito.kitsune@protonmail.com>
 # Based on
 # https://github.com/rancher/rancher/issues/19882#issuecomment-501056386
 
