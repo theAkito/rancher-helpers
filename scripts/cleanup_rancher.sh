@@ -26,7 +26,7 @@ function echoError { local args="$@"; white_brackets $(red_printf "ERROR") && ec
 function containerd_restart { systemctl restart containerd; }
 function rmMetaDB { silence "rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db"; }
 function docker_start { systemctl start docker; }
-function finish_line { white_printf "Done!\n"; }
+function finish_line { white_printf "OK\n"; }
 function docker_restart {
   systemctl stop docker;
   echoInfo "Restarting Docker..."
@@ -34,9 +34,11 @@ function docker_restart {
   systemctl start docker
   if [[ $? == 0 ]]; then
     echoInfo "Docker restarted!"
+    return 0
   else
     echoError "Docker restart failed!"
     white_printf "Manually stop docker then wait 20 seconds and start it again.\n"
+    return 1
   fi
 }
 function rmContainers {
@@ -128,4 +130,6 @@ cleanFirewall
 # Restarts services, to apply previous removals.
 containerd_restart
 # Slowed down Docker restart. Needs a pause, because else it complains about "too quick" restarts.
-docker_restart
+docker_restart && \
+# Everything went smoothly; process finished.
+finish_line
