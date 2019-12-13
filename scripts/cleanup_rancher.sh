@@ -85,7 +85,8 @@ function rmLocs {
   local rancher_loc="/opt/rancher"
   if [ -d ${rancher_loc} ]; then
     silence "rm -fr /opt/rancher" && \
-    echoInfo "Rancher successfully removed from ${rancher_loc}."
+    echoInfo "Rancher successfully removed from ${rancher_loc}." || \
+    echoError "Rancher could not be removed from ${rancher_loc}!"
   else
     echoInfo "Rancher not found in ${rancher_loc}! Skipping."
   fi
@@ -101,12 +102,14 @@ function cleanFirewall {
     done
     silence "$IPTABLES -t $table -X"
   done
+  echoInfo "Firewall rules cleared."
 }
 function rmDevs {
   ## Unmounts all Rancher and Kubernetes related virtual devices and volumes.
   for mount in \
     $(mount | grep tmpfs | grep '/var/lib/kubelet' | awk '{ print $3 }') \
     /var/lib/kubelet /var/lib/rancher; do silence "umount ${mount}"; done
+  echoInfo "Devices and volumes unmounted."
 }
 ############################################
 ############################################
