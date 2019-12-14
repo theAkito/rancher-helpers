@@ -19,12 +19,9 @@ function red_printf { printf "\033[31m$@\033[0m"; } # Debugging output.
 function green_printf { printf "\033[32m$@\033[0m"; } # Debugging output.
 function yellow_printf { printf "\033[33m$@\033[0m"; } # Debugging output.
 function white_printf { printf "\033[1;37m$@\033[0m"; } # Debugging output.
-function white_brackets { local args="$@"; white_printf "["; printf "${args}"; white_printf "]"; } # Debugging 
-output.
-function echoInfo { local args="$@"; white_brackets $(green_printf "INFO") && echo " ${args}"; } # Debugging 
-output.
-function echoError { local args="$@"; white_brackets $(red_printf "ERROR") && echo " ${args}"; } # Debugging 
-output.
+function white_brackets { local args="$@"; white_printf "["; printf "${args}"; white_printf "]"; } # Debugging output.
+function echoInfo { local args="$@"; white_brackets $(green_printf "INFO") && echo " ${args}"; } # Debugging output.
+function echoError { local args="$@"; white_brackets $(red_printf "ERROR") && echo " ${args}"; } # Debugging output.
 function containerd_restart { systemctl restart containerd; }
 function rmMetaDB { silence "rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db"; }
 function docker_start { systemctl start docker; }
@@ -124,11 +121,11 @@ function rmDevs {
 }
 ############################################
 ############################################
+# Checks if user running the script is root.
+checkPriv
 # Makes sure that script is not accidentally run on wrong target system.
 # Exits if Docker is not installed.
 checkSys
-# Checks if user running the script is root.
-checkPriv
 # Ensures Docker is actually running.
 docker_start
 # Removes ALL containers.
