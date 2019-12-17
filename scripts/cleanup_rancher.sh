@@ -30,10 +30,14 @@ function checkPriv { if [[ "$EUID" != 0 ]]; then echoError "Please run me as roo
 function checkSys {
   ## Makes sure that script is not accidentally run on wrong target system.
   ## Exits if Docker is not installed.
-  silence "docker ps" && \
-  echoInfo "Docker exists." || \
-  echoError "Docker not installed on system. Exiting."
-  exit 1
+  silence "docker ps"
+  if [[ $? == 0 ]]; then
+    echoInfo "Docker exists."
+    return 0
+  else
+    echoError "Docker not installed on system. Exiting."
+    exit 1
+  fi
 }
 function docker_restart {
   systemctl stop docker;

@@ -1,0 +1,28 @@
+---
+kind: pipeline
+type: docker
+name: rancher-helpers
+
+platform:
+  os: linux
+  arch: arm
+
+steps:
+- name: main
+  image: docker:dind
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  commands:
+  - apk add --no-cache bash
+  - sed -in 's/docker ps -aq/echo "Pretending to delete Docker containers."/' ./scripts/cleanup_rancher.sh
+  - sed -in 's/docker volume ls -q/echo "Pretending to delete Docker volumes."/' ./scripts/cleanup_rancher.sh
+  - sed -in 's/systemctl start docker/echo "Pretending to start Docker with systemctl."/' ./scripts/cleanup_rancher.sh
+  - sed -in 's/systemctl stop docker/echo "Pretending to stop Docker with systemctl."/' ./scripts/cleanup_rancher.sh
+  - sed -in 's/systemctl restart containerd/echo "Pretending to restart containerd with systemctl."/' ./scripts/cleanup_rancher.sh
+  - for f in scripts/*.sh; do bash "$f" || continue; done;
+
+volumes:
+- name: dockersock
+  host:
+    path: /var/run/docker.sock
