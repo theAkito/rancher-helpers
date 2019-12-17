@@ -1,6 +1,5 @@
 # Rancher's little helpers
 
-Copied
 [![Build Status](https://drone.akito.ooo:52222/api/badges/Akito/rancher-helpers/status.svg)](https://drone.akito.ooo:52222/Akito/rancher-helpers)
 
 Mainly consisting of helper scripts and other little tools for the management of Rancher and Kubernetes.
