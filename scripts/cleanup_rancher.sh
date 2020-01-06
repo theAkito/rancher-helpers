@@ -24,26 +24,27 @@ function echoInfo { local args="$@"; white_brackets $(green_printf "INFO") && ec
 function echoError { local args="$@"; white_brackets $(red_printf "ERROR") && echo " ${args}"; } # Debugging output.
 function containerd_restart { systemctl restart containerd; }
 function rmMetaDB { silence "rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db"; }
-function docker_start { systemctl start docker; }
+function docker_start { silence "systemctl start docker"; }
+function docker_stop { silence "systemctl stop docker"; }
 function finish_line { white_printf "OK\n"; }
 function checkPriv { if [[ "$EUID" != 0 ]]; then echoError "Please run me as root."; exit 1; fi; }
 function checkSys {
   ## Makes sure that script is not accidentally run on wrong target system.
   ## Exits if Docker is not installed.
-  silence "docker ps"
+  silence "docker version"
   if [[ $? == 0 ]]; then
     echoInfo "Docker exists."
     return 0
   else
-    echoError "Docker not installed on system. Exiting."
+    echoError "Docker not installed/running on system. Exiting."
     exit 1
   fi
 }
 function docker_restart {
-  systemctl stop docker;
+  docker_stop
   echoInfo "Restarting Docker..."
   sleep 10;
-  systemctl start docker
+  docker_start
   if [[ $? == 0 ]]; then
     echoInfo "Docker restarted!"
     return 0
@@ -130,8 +131,6 @@ checkPriv
 # Makes sure that script is not accidentally run on wrong target system.
 # Exits if Docker is not installed.
 checkSys
-# Ensures Docker is actually running.
-docker_start
 # Removes ALL containers.
 rmContainers
 # Removes ALL volumes.
