@@ -36,7 +36,7 @@ function white_printf { printf "\033[1;37m$@\033[0m"; } # Debugging output.
 function white_brackets { local args="$@"; white_printf "["; printf "${args}"; white_printf "]"; } # Debugging output.
 function echoInfo { local args="$@"; white_brackets $(green_printf "INFO") && echo " ${args}"; } # Debugging output.
 function echoError { local args="$@"; white_brackets $(red_printf "ERROR") && echo " ${args}"; } # Debugging output.
-function containerd_restart { systemctl restart containerd; }
+function containerd_restart { silence "systemctl restart containerd"; }
 function rmMetaDB { silence "rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db"; }
 function docker_start { silence "systemctl start docker"; }
 function docker_stop { silence "systemctl stop docker"; }
