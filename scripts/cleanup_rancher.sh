@@ -28,20 +28,39 @@
 ## Only works reliably with GNU Bash.
 ## Expects `systemd` on the host.
 
-function silence { local args="$@"; ${args} &>/dev/null; } # Silences commands.
-function red_printf { printf "\033[31m$@\033[0m"; } # Debugging output.
-function green_printf { printf "\033[32m$@\033[0m"; } # Debugging output.
-function yellow_printf { printf "\033[33m$@\033[0m"; } # Debugging output.
-function white_printf { printf "\033[1;37m$@\033[0m"; } # Debugging output.
-function white_brackets { local args="$@"; white_printf "["; printf "${args}"; white_printf "]"; } # Debugging output.
-function echoInfo { local args="$@"; white_brackets $(green_printf "INFO") && echo " ${args}"; } # Debugging output.
-function echoError { local args="$@"; white_brackets $(red_printf "ERROR") && echo " ${args}"; } # Debugging output.
+#################################   Boilerplate of the Boilerplate   ####################################################
+# Coloured Echoes                                                                                                       #
+function red_echo      { echo -e "\033[31m$@\033[0m";   }                                                               #
+function green_echo    { echo -e "\033[32m$@\033[0m";   }                                                               #
+function yellow_echo   { echo -e "\033[33m$@\033[0m";   }                                                               #
+function white_echo    { echo -e "\033[1;37m$@\033[0m"; }                                                               #
+# Coloured Printfs                                                                                                      #
+function red_printf    { printf "\033[31m$@\033[0m";    }                                                               #
+function green_printf  { printf "\033[32m$@\033[0m";    }                                                               #
+function yellow_printf { printf "\033[33m$@\033[0m";    }                                                               #
+function white_printf  { printf "\033[1;37m$@\033[0m";  }                                                               #
+# Debugging Outputs                                                                                                     #
+function white_brackets { local args="$@"; white_printf "["; printf "${args}"; white_printf "]"; }                      #
+function echoInfo   { local args="$@"; white_brackets $(green_printf "INFO") && echo " ${args}"; }                      #
+function echoWarn   { local args="$@";  echo "$(white_brackets "$(yellow_printf "WARN")" && echo " ${args}";)" 1>&2; }  #
+function echoError  { local args="$@"; echo "$(white_brackets "$(red_printf    "ERROR")" && echo " ${args}";)" 1>&2; }  #
+# Silences commands' STDOUT as well as STDERR.                                                                          #
+function silence { local args="$@"; ${args} &>/dev/null; }                                                              #
+# Check your privilege.                                                                                                 #
+function checkPriv { if [[ "$EUID" != 0 ]]; then echoError "Please run me as root."; exit 1; fi;  }                     #
+# Returns 0 if script is sourced, returns 1 if script is run in a subshell.                                             #
+function checkSrc { (return 0 2>/dev/null); if [[ "$?" == 0 ]]; then return 0; else return 1; fi; }                     #
+# Prints directory the script is run from. Useful for local imports of BASH modules.                                    #
+# This only works if this function is defined in the actual script. So copy pasting is needed.                          #
+function whereAmI { printf "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )";   }                     #
+# Alternatively, this alias works in the sourcing script, but you need to enable alias expansion.                       #
+alias whereIsMe='printf "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"'                            #
+#########################################################################################################################
 function containerd_restart { silence "systemctl restart containerd"; }
 function rmMetaDB { silence "rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db"; }
 function docker_start { silence "systemctl start docker"; }
 function docker_stop { silence "systemctl stop docker"; }
 function finish_line { white_printf "OK\n"; }
-function checkPriv { if [[ "$EUID" != 0 ]]; then echoError "Please run me as root."; exit 1; fi; }
 function checkSys {
   ## Makes sure that script is not accidentally run on wrong target system.
   ## Exits if Docker is not installed.
@@ -102,7 +121,12 @@ function rmLocs {
           )
   for loc in "${FOLDERS[@]}"; do
     if [ -d ${loc} ]; then
-      silence "rm -fr ${loc}" && \
+      timeout 15s rm -fr ${loc} || \
+        { \
+         echoError   "Timed out while trying to remove ${loc}."
+         yellow_echo "Run \"rm -fr ${loc}\" manually."
+         exit 2
+        }
       echoInfo "${loc} successfully deleted."
     else
       echoInfo "${loc} not found! Skipping."
