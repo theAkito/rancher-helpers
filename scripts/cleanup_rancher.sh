@@ -149,11 +149,11 @@ checkSys
 rmContainers
 # Removes ALL volumes.
 rmVolumes
+# Unmounts all Rancher and Kubernetes related virtual devices and volumes.
+rmDevs
 # Removes all Rancher and Kubernetes related folders.
 # Removes Rancher installation from default installation directory.
 rmLocs
-# Unmounts all Rancher and Kubernetes related virtual devices and volumes.
-rmDevs
 # Removes metadata database.
 rmMetaDB
 # Removes Firewall entries related to Rancher or Kubernetes.
