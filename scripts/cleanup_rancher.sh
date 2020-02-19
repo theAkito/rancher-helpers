@@ -157,10 +157,36 @@ function cleanFirewall {
 }
 function rmDevs {
   ## Unmounts all Rancher and Kubernetes related virtual devices and volumes.
-  for mount in \
-    $(mount | grep tmpfs | grep '/var/lib/kubelet' | awk '{ print $3 }') \
-    /var/lib/kubelet /var/lib/rancher; do silence "umount ${mount}"; done
-  echoInfo "Devices and volumes unmounted."
+  fail_mount=false
+  fail_pvc=false
+  local -a mount_list=( $(mount | grep tmpfs | grep '/var/lib/kubelet' | awk '{ print $3 }') )
+  for mount in "${mount_list[@]}" /var/lib/kubelet /var/lib/rancher; do
+    silence "umount -f ${mount}"
+    if [[ $? ]]; then
+      echoInfo  "${mount} successfully unmounted."
+    else
+      echoError "${mount} could not be unmounted."
+    fi
+  done
+  ## Unmounts all Persistent Volume Claims, forcefully.
+  local -a pvc_list=( $(mount | grep '/var/lib/kubelet/pods' | awk '{ print $3 }') )
+  for pvc in "${pvc_list[@]}"; do
+    silence "umount -f ${pvc}"
+    if [[ $? ]]; then
+      echoInfo  "$(printf ${pvc} | cut -c 1-45)... successfully unmounted."
+    else
+      echoError "${pvc} could not be unmounted."
+    fi
+  done
+}
+function fazit {
+  ## Checks for fail flags set during other processes and
+  ## outputs a summary of possible errors.
+  if   [[  $fail_mount == false ]] && [[  $fail_pvc == false ]]; then
+    :
+  elif [[  $fail_mount == true ]] || [[  $fail_pvc == true ]]; then
+    echoError "Failed to unmount some volumes."
+  fi
 }
 ############################################
 ############################################
@@ -186,6 +212,8 @@ cleanFirewall
 containerd_restart
 # Slowed down Docker restart. Needs a pause, because else it complains about "too quick" restarts.
 docker_restart
-# Everything went smoothly; process finished.
+# Checks for fail flags set during other processes and outputs a summary of possible errors.
+fazit
+# Process finished.
 finish_line
 
