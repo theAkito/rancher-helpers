@@ -133,11 +133,16 @@ function rmLocs {
     fi
   done
   ## Removes Rancher installation from default installation directory.
+  fail_rloc=false
   local rancher_loc="/opt/rancher"
   if [ -d ${rancher_loc} ]; then
-    silence "rm -fr /opt/rancher" && \
-    echoInfo "Rancher successfully removed from ${rancher_loc}." || \
-    echoError "Rancher could not be removed from ${rancher_loc}!"
+    silence "rm -fr /opt/rancher"
+    if [[ $? ]]; then
+      echoInfo "Rancher successfully removed from ${rancher_loc}."
+    else
+      echoError "Rancher could not be removed from ${rancher_loc}!"
+      fail_rloc=true
+    fi
   else
     echoInfo "Rancher not found in ${rancher_loc}! Skipping."
   fi
@@ -166,6 +171,7 @@ function rmDevs {
       echoInfo  "${mount} successfully unmounted."
     else
       echoError "${mount} could not be unmounted."
+      fail_mount=true
     fi
   done
   ## Unmounts all Persistent Volume Claims, forcefully.
@@ -176,16 +182,22 @@ function rmDevs {
       echoInfo  "$(printf ${pvc} | cut -c 1-45)... successfully unmounted."
     else
       echoError "${pvc} could not be unmounted."
+      fail_pvc=true
     fi
   done
 }
 function fazit {
   ## Checks for fail flags set during other processes and
   ## outputs a summary of possible errors.
-  if   [[  $fail_mount == false ]] && [[  $fail_pvc == false ]]; then
-    :
-  elif [[  $fail_mount == true ]] || [[  $fail_pvc == true ]]; then
-    echoError "Failed to unmount some volumes."
+  local -i err_counter=0
+  if   [[  $fail_mount == true ]]; then
+    let "err_counter++"
+  fi
+  if   [[  $fail_pvc == true ]]; then
+    let "err_counter++"
+  fi
+  if   [[  $fail_rloc == true ]]; then
+    let "err_counter++"
   fi
 }
 ############################################
