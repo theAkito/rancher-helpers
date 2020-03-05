@@ -53,9 +53,10 @@ function apt_install {
   silence "apt-get update"
   DEBIAN_FRONTEND=noninteractive \
   apt-get \
-    -o Dpkg::Options::="--force-confdef" \
-    -o Dpkg::Options::="--force-confold" \
+      -o Dpkg::Options::="--force-confdef" \
+      -o Dpkg::Options::="--force-confold" \
     install \
+      -y --force-yes \
     "${package_list[@]}" && \
   apt-get clean          && \
   rm -rf /var/lib/apt/lists/*
