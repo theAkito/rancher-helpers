@@ -118,6 +118,7 @@ function rmLocs {
             "/var/log/containers" \
             "/var/log/pods" \
             "/var/run/calico" \
+            "/home/$1/.kube" \
           )
   for loc in "${FOLDERS[@]}"; do
     if [ -d ${loc} ]; then
@@ -202,6 +203,8 @@ function fazit {
 }
 ############################################
 ############################################
+currentuser=$1
+
 # Checks if user running the script is root.
 checkPriv
 # Makes sure that script is not accidentally run on wrong target system.
@@ -215,7 +218,7 @@ rmVolumes
 rmDevs
 # Removes all Rancher and Kubernetes related folders.
 # Removes Rancher installation from default installation directory.
-rmLocs
+rmLocs "$currentuser"
 # Removes metadata database.
 rmMetaDB
 # Removes Firewall entries related to Rancher or Kubernetes.
