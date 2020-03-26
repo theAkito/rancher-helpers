@@ -99,6 +99,19 @@ function rmVolumes {
   echoInfo "Successfully removed all Docker volumes." || \
   echoInfo "No Docker volumes exist! Skipping."
 }
+function rmDir {
+  if [ -d $1 ]; then
+    timeout 15s rm -fr $1 || \
+      { \
+       echoError   "Timed out while trying to remove $1."
+       yellow_echo "Run \"rm -fr $1 manually."
+       exit 2
+      }
+    echoInfo "$1 successfully deleted."
+  else
+    echoInfo "$1 not found! Skipping."
+  fi
+}
 function rmLocs {
   ## Removes all Rancher and Kubernetes related folders.
   declare -a FOLDERS
@@ -118,20 +131,9 @@ function rmLocs {
             "/var/log/containers" \
             "/var/log/pods" \
             "/var/run/calico" \
-            "/home/$1/.kube" \
           )
   for loc in "${FOLDERS[@]}"; do
-    if [ -d ${loc} ]; then
-      timeout 15s rm -fr ${loc} || \
-        { \
-         echoError   "Timed out while trying to remove ${loc}."
-         yellow_echo "Run \"rm -fr ${loc}\" manually."
-         exit 2
-        }
-      echoInfo "${loc} successfully deleted."
-    else
-      echoInfo "${loc} not found! Skipping."
-    fi
+    rmDir $loc
   done
   ## Removes Rancher installation from default installation directory.
   fail_rloc=false
@@ -187,6 +189,17 @@ function rmDevs {
     fi
   done
 }
+function rmDotKube {
+  if [ -z "$1" ]; then {
+    ## Removes .kube in all users' home
+    for dotKube in `find /home -name ".kube" -type d`; do
+      [ ! -z ${dotKube} ] && rmDir $dotKube
+    done
+  }
+  else
+    rmDir /home/$1/.kube
+  fi
+}
 function fazit {
   ## Checks for fail flags set during other processes and
   ## outputs a summary of possible errors.
@@ -203,7 +216,6 @@ function fazit {
 }
 ############################################
 ############################################
-currentuser=$1
 
 # Checks if user running the script is root.
 checkPriv
@@ -218,7 +230,10 @@ rmVolumes
 rmDevs
 # Removes all Rancher and Kubernetes related folders.
 # Removes Rancher installation from default installation directory.
-rmLocs "$currentuser"
+rmLocs
+# Remove .kube directory in user home directory
+specified_user=$1
+rmDotKube "$specified_user"
 # Removes metadata database.
 rmMetaDB
 # Removes Firewall entries related to Rancher or Kubernetes.
