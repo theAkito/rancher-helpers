@@ -41,9 +41,11 @@ function yellow_printf { printf "\033[33m$@\033[0m";    }                       
 function white_printf  { printf "\033[1;37m$@\033[0m";  }                                                               #
 # Debugging Outputs                                                                                                     #
 function white_brackets { local args="$@"; white_printf "["; printf "${args}"; white_printf "]"; }                      #
-function echoInfo   { local args="$@"; white_brackets $(green_printf "INFO") && echo " ${args}"; }                      #
-function echoWarn   { local args="$@";  echo "$(white_brackets "$(yellow_printf "WARN")" && echo " ${args}";)" 1>&2; }  #
-function echoError  { local args="$@"; echo "$(white_brackets "$(red_printf    "ERROR")" && echo " ${args}";)" 1>&2; }  #
+function echoDebug  { local args="$@"; if [[ ${debug_flag} == true ]]; then                                             #
+white_brackets "$(white_printf   "DEBUG")" && echo " ${args}"; fi; }                                                    #
+function echoInfo   { local args="$@"; white_brackets "$(green_printf  "INFO" )"  && echo " ${args}"; }                 #
+function echoWarn   { local args="$@"; white_brackets "$(yellow_printf "WARN" )"  && echo " ${args}"; 1>&2; }           #
+function echoError  { local args="$@"; white_brackets "$(red_printf    "ERROR")"  && echo " ${args}"; 1>&2; }           #
 # Silences commands' STDOUT as well as STDERR.                                                                          #
 function silence { local args="$@"; ${args} &>/dev/null; }                                                              #
 # Check your privilege.                                                                                                 #
@@ -55,6 +57,7 @@ function checkSrc { (return 0 2>/dev/null); if [[ "$?" == 0 ]]; then return 0; e
 function whereAmI { printf "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )";   }                     #
 # Alternatively, this alias works in the sourcing script, but you need to enable alias expansion.                       #
 alias whereIsMe='printf "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"'                            #
+debug_flag=false                                                                                                        #
 #########################################################################################################################
 function containerd_restart { silence "systemctl restart containerd"; }
 function rmMetaDB { silence "rm -f /var/lib/containerd/io.containerd.metadata.v1.bolt/meta.db"; }
@@ -133,7 +136,6 @@ function rmLocs {
     fi
   done
   ## Removes Rancher installation from default installation directory.
-  fail_rloc=false
   local rancher_loc="/opt/rancher"
   if [ -d ${rancher_loc} ]; then
     silence "rm -fr /opt/rancher"
@@ -141,7 +143,6 @@ function rmLocs {
       echoInfo "Rancher successfully removed from ${rancher_loc}."
     else
       echoError "Rancher could not be removed from ${rancher_loc}!"
-      fail_rloc=true
     fi
   else
     echoInfo "Rancher not found in ${rancher_loc}! Skipping."
@@ -160,45 +161,42 @@ function cleanFirewall {
   done
   echoInfo "Firewall rules cleared."
 }
+function extractVolName {
+  ## Extracts volume ID.
+  # Volume path.
+  local vol="$1"
+  # Resulting volume ID.
+  local vol_id
+  # Removes everything before first dash from original string.
+  local split_string1="$(printf '%s' "${vol%%-*}")"
+  # Removes everything after first dash from original string.
+  local split_string2="$(printf '%s' "${vol#*-}")"
+  # Removes everything before last slash from split_string1.
+  split_string1="$(printf '%s' "${split_string1##*/}")"
+  # Removes everything after first slash from split_string2.
+  split_string2="$(printf '%s' "${split_string2%%/*}")"
+  # Combines both cleaned split_strings, resulting in the volume ID.
+  vol_id="$(printf '%s' "${split_string1}-${split_string2}")"
+  # Print volume ID.
+  printf '%s\n' "${vol_id}"
+}
 function rmDevs {
   ## Unmounts all Rancher and Kubernetes related virtual devices and volumes.
-  fail_mount=false
-  fail_pvc=false
-  local -a mount_list=( $(mount | grep tmpfs | grep '/var/lib/kubelet' | awk '{ print $3 }') )
+  ## Unmounts all Persistent Volume Claims, forcefully.
+  local pattern='/var/lib/kubelet'
+  local -a mount_list=( $(mount | grep tmpfs | grep "${pattern}" | awk '{ print $3 }') )
   for mount in "${mount_list[@]}" /var/lib/kubelet /var/lib/rancher; do
     silence "umount -f ${mount}"
     if [[ $? ]]; then
-      echoInfo  "${mount} successfully unmounted."
+      if [[ "${mount}" == "/var/lib/kubelet" ]] || [[ "${mount}" == "/var/lib/rancher" ]]; then
+        echoInfo  "${mount} successfully unmounted."
+      else
+        echoInfo  "$(extractVolName "${mount}") successfully unmounted."
+      fi
     else
       echoError "${mount} could not be unmounted."
-      fail_mount=true
     fi
   done
-  ## Unmounts all Persistent Volume Claims, forcefully.
-  local -a pvc_list=( $(mount | grep '/var/lib/kubelet/pods' | awk '{ print $3 }') )
-  for pvc in "${pvc_list[@]}"; do
-    silence "umount -f ${pvc}"
-    if [[ $? ]]; then
-      echoInfo  "$(printf ${pvc} | cut -c 1-45)... successfully unmounted."
-    else
-      echoError "${pvc} could not be unmounted."
-      fail_pvc=true
-    fi
-  done
-}
-function fazit {
-  ## Checks for fail flags set during other processes and
-  ## outputs a summary of possible errors.
-  local -i err_counter=0
-  if   [[  $fail_mount == true ]]; then
-    let "err_counter++"
-  fi
-  if   [[  $fail_pvc == true ]]; then
-    let "err_counter++"
-  fi
-  if   [[  $fail_rloc == true ]]; then
-    let "err_counter++"
-  fi
 }
 ############################################
 ############################################
@@ -224,8 +222,6 @@ cleanFirewall
 containerd_restart
 # Slowed down Docker restart. Needs a pause, because else it complains about "too quick" restarts.
 docker_restart
-# Checks for fail flags set during other processes and outputs a summary of possible errors.
-fazit
 # Process finished.
 finish_line
 
