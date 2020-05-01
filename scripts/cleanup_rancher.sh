@@ -198,6 +198,30 @@ function rmDevs {
     fi
   done
 }
+function rmNetworkInterfaces {
+   ## Removes Network Interfaces created by Kubernetes and Rancher.
+  function getNetIfaces {
+    ## Gets a list of Network Interfaces created by Kubernetes and Rancher.
+    local ifaces="$(ls /sys/class/net)"
+    local pattern='flannel.1|cni0|tunl0|cali[[:alnum:]]{11}|veth[[:alnum:]]{7,8}'
+    for word in $ifaces; do
+      if [[ ${word} =~ ${pattern} ]]; then
+        match="${match:+}${BASH_REMATCH[0]}"
+        printf '%s ' ${match}
+      fi
+    done
+  }
+  local -a iface_list=( getNetIfaces )
+  for iface in ${iface_list[@]}; do
+    ip link delete "${iface}"
+    if [[ $? ]]; then
+      echoInfo "${iface} successfully removed!"
+    else
+      echoInfo "${iface} could not be removed."
+    fi
+  done
+  unset -f getNetIfaces
+}
 ############################################
 ############################################
 # Checks if user running the script is root.
@@ -218,6 +242,8 @@ rmLocs
 rmMetaDB
 # Removes Firewall entries related to Rancher or Kubernetes.
 cleanFirewall
+# Removes Network Interfaces created by Kubernetes and Rancher.
+rmNetworkInterfaces
 # Restarts services, to apply previous removals.
 containerd_restart
 # Slowed down Docker restart. Needs a pause, because else it complains about "too quick" restarts.
