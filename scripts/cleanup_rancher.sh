@@ -202,12 +202,12 @@ function rmNetworkInterfaces {
    ## Removes Network Interfaces created by Kubernetes and Rancher.
   function getNetIfaces {
     ## Gets a list of Network Interfaces created by Kubernetes and Rancher.
+    local iface
     local ifaces="$(ls /sys/class/net)"
     local pattern='flannel.1|cni0|tunl0|cali[[:alnum:]]{11}|veth[[:alnum:]]{7,8}'
-    for word in $ifaces; do
-      if [[ ${word} =~ ${pattern} ]]; then
-        match="${match:+}${BASH_REMATCH[0]}"
-        printf '%s ' ${match}
+    for iface in $ifaces; do
+      if [[ ${iface} =~ ${pattern} ]]; then
+        printf '%s ' ${iface}
       fi
     done
   }
