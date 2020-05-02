@@ -147,6 +147,20 @@ function rmLocs {
   else
     echoInfo "Rancher not found in ${rancher_loc}! Skipping."
   fi
+  ## Removes .kube folder in all personal home directories.
+  local -a personal_folder_list=( $(find /home/* -maxdepth 0 -type d) )
+  local kube_folder
+  for dir in ${personal_folder_list[@]}; do
+    kube_folder="${dir}/.kube"
+    silence "rm -fr ${kube_folder}"
+    if [[ $? ]]; then
+      echoInfo "${kube_folder} successfully removed."
+    elif [[ -d ${kube_folder} ]]; then
+      echoError "${kube_folder} could not be removed!"
+    else
+      echoInfo "${kube_folder} not found! Skipping."
+    fi
+  done
 }
 function cleanFirewall {
   ## Removes Firewall entries related to Rancher or Kubernetes.
@@ -167,9 +181,9 @@ function extractVolName {
   local vol="$1"
   # Resulting volume ID.
   local vol_id
-  # Removes everything before first dash from original string.
-  local split_string1="$(printf '%s' "${vol%%-*}")"
   # Removes everything after first dash from original string.
+  local split_string1="$(printf '%s' "${vol%%-*}")"
+  # Removes everything before first dash from original string.
   local split_string2="$(printf '%s' "${vol#*-}")"
   # Removes everything before last slash from split_string1.
   split_string1="$(printf '%s' "${split_string1##*/}")"
