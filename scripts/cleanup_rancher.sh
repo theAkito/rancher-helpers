@@ -148,7 +148,7 @@ function rmLocs {
     echoInfo "Rancher not found in ${rancher_loc}! Skipping."
   fi
   ## Removes .kube folder in all personal home directories.
-  local -a personal_folder_list=( $(find /home/* -maxdepth 0 -type d) )
+  local -a personal_folder_list=( $(silence "find /home/* -maxdepth 0 -type d" || true) )
   local kube_folder
   for dir in ${personal_folder_list[@]}; do
     kube_folder="${dir}/.kube"
