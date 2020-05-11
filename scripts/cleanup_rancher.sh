@@ -225,7 +225,7 @@ function rmNetworkInterfaces {
       fi
     done
   }
-  local -a iface_list=( getNetIfaces )
+  local -a iface_list=( $(getNetIfaces) )
   for iface in ${iface_list[@]}; do
     silence "ip link delete ${iface}"
     if [[ $? ]]; then
