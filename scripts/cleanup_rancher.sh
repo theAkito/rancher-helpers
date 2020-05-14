@@ -166,14 +166,23 @@ function cleanFirewall {
   ## Removes Firewall entries related to Rancher or Kubernetes.
   IPTABLES="/sbin/iptables"
   cat /proc/net/ip_tables_names | while read table; do
-    silence "$IPTABLES -t $table -L -n" | while read c chain rest; do
+    $IPTABLES -t $table -L -n | while read c chain rest; do
         if test "X$c" = "XChain" ; then
           silence "$IPTABLES -t $table -F $chain"
+          if [[ $? ]]; then
+            echoInfo  "Chain ${chain} from Table ${table} successfully flushed."
+          else
+            echoError "Chain ${chain} from Table ${table} could not be flushed!"
+          fi
         fi
     done
     silence "$IPTABLES -t $table -X"
+    if [[ $? ]]; then
+      echoInfo  "Chains from Table ${table} successfully removed."
+    else
+      echoError "Chains from Table ${table} could not be removed!"
+    fi
   done
-  echoInfo "Firewall rules cleared."
 }
 function extractVolName {
   ## Extracts volume ID.
@@ -197,8 +206,7 @@ function extractVolName {
 function rmDevs {
   ## Unmounts all Rancher and Kubernetes related virtual devices and volumes.
   ## Unmounts all Persistent Volume Claims, forcefully.
-  local pattern='/var/lib/kubelet'
-  local -a mount_list=( $(mount | grep tmpfs | grep "${pattern}" | awk '{ print $3 }') )
+  local -a mount_list=( $(mount | grep -E '/var/lib/kubelet[[:print:]]*tmpfs' | awk '{ print $3 }') )
   for mount in "${mount_list[@]}" /var/lib/kubelet /var/lib/rancher; do
     silence "umount -f ${mount}"
     if [[ $? ]]; then
