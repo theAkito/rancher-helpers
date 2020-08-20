@@ -43,3 +43,11 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# ---> Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/

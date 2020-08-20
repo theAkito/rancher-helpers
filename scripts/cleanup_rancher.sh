@@ -166,7 +166,7 @@ function cleanFirewall {
   ## Removes Firewall entries related to Rancher or Kubernetes.
   IPTABLES="/sbin/iptables"
   cat /proc/net/ip_tables_names | while read table; do
-    $IPTABLES -t $table -L -n | while read c chain rest; do
+    $IPTABLES -t $table -L -n 2>/dev/null | while read c chain rest; do
         if test "X$c" = "XChain" ; then
           silence "$IPTABLES -t $table -F $chain"
           if [[ $? ]]; then
