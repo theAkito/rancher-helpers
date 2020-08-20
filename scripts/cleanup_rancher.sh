@@ -114,6 +114,7 @@ function rmLocs {
             "/run/calico" \
             "/run/flannel" \
             "/var/lib/calico" \
+            "/var/lib/weave" \
             "/var/lib/etcd" \
             "/var/lib/cni" \
             "/var/lib/kubelet" \
