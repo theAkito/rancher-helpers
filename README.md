@@ -1,7 +1,6 @@
-[![Build Status](https://drone.akito.ooo:52222/api/badges/Akito/rancher-helpers/status.svg)](https://drone.akito.ooo:52222/Akito/rancher-helpers)
 # Rancher's little helpers
 
-Mainly consisting of helper scripts and other little tools for the management of Rancher and Kubernetes.
+Mainly consisting of helper scripts and other little tools for the management of Rancher, Kubernetes & related utilities.
 
 ### Rancher Cleanup script
 #### To be clear: this DELETES EVERYTHING related to Rancher and Kubernetes!
